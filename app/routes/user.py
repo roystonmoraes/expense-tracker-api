@@ -7,6 +7,8 @@ from app.schemas.user import UserCreate, UserResponse
 
 from app.auth.auth_handler import hash_password
 
+from app.auth.oauth2 import get_current_user
+
 router = APIRouter(prefix="/users", tags=["Users"])
 
 
@@ -20,3 +22,12 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_user)
     return new_user
+
+
+@router.get("/me")
+def get_me(current_user: User = Depends(get_current_user)):
+    return {
+        "id": current_user.id,
+        "name": current_user.name,
+        "email": current_user.email,
+    }
