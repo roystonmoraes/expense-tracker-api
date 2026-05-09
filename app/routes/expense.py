@@ -11,6 +11,9 @@ from app.schemas.expense import ExpenseCreate, ExpenseResponse
 
 from app.auth.oauth2 import get_current_user
 
+from typing import Optional
+from datetime import date
+
 router = APIRouter(prefix="/expenses", tags=["Expenses"])
 
 
@@ -37,9 +40,25 @@ def create_expense(
 
 @router.get("/", response_model=list[ExpenseResponse])
 def get_expenses(
-    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
+    category: Optional[str] = None,
+    expense_date: Optional[date] = None,
+    skip: int = 0,
+    limit: int = 10,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    expenses = db.query(Expense).filter(Expense.user_id == current_user.id).all()
+
+    query = db.query(Expense).filter(Expense.user_id == current_user.id)
+
+    if category:
+        query = query.filter(Expense.category == category)
+
+    if expense_date:
+        query = query.filter(Expense.expense_date == expense_date)
+
+    expenses = (
+        query.order_by(Expense.expense_date.desc()).offset(skip).limit(limit).all()
+    )
 
     return expenses
 
